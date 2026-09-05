@@ -3,7 +3,6 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 
 import os
 TOKEN = os.getenv("BOT_TOKEN")
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📚 المراحل الدراسية", callback_data="stages")],
