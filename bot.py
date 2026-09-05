@@ -5,6 +5,9 @@ import os
 
 TOKEN = os.getenv("BOT_TOKEN")
 
+CHANNEL_USERNAME = "@English_English1997"
+CHANNEL_LINK = "https://t.me/English_English1997"
+
 
 def main_menu():
     keyboard = [
@@ -19,7 +22,42 @@ def main_menu():
     return InlineKeyboardMarkup(keyboard)
 
 
+def subscription_menu():
+    keyboard = [
+        [InlineKeyboardButton("📢 اشترك في القناة", url=CHANNEL_LINK)],
+        [InlineKeyboardButton("✅ تحقق من الاشتراك", callback_data="check_subscription")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def is_subscribed(user_id, context):
+    try:
+        member = await context.bot.get_chat_member(
+            chat_id=CHANNEL_USERNAME,
+            user_id=user_id
+        )
+
+        return member.status in ["member", "administrator", "creator"]
+
+    except Exception:
+        return False
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
+    subscribed = await is_subscribed(user_id, context)
+
+    if not subscribed:
+        await update.message.reply_text(
+            "🎓 منصة ابن الجبور التعليمية\n\n"
+            "🌹 أهلاً وسهلاً بك\n\n"
+            "📢 للاستخدام المجاني للمنصة، يرجى الاشتراك في قناة المنصة أولاً.\n\n"
+            "بعد الاشتراك اضغط على زر التحقق:",
+            reply_markup=subscription_menu()
+        )
+        return
+
     await update.message.reply_text(
         "🎓 منصة ابن الجبور التعليمية\n\n"
         "أهلاً وسهلاً بك 🌹\n"
@@ -31,6 +69,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
+    # التحقق من الاشتراك
+    if query.data == "check_subscription":
+        user_id = query.from_user.id
+
+        subscribed = await is_subscribed(user_id, context)
+
+        if subscribed:
+            await query.edit_message_text(
+                "✅ تم التحقق من اشتراكك بنجاح!\n\n"
+                "🎓 أهلاً بك في منصة ابن الجبور التعليمية 🌹",
+                reply_markup=main_menu()
+            )
+        else:
+            await query.answer(
+                "❌ لم يتم العثور على اشتراكك في القناة.",
+                show_alert=True
+            )
+        return
 
     # المراحل الدراسية
     if query.data == "stages":
@@ -85,7 +142,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # بقية المراحل
+    # القائمة الرئيسية
+    if query.data == "main_menu":
+        await query.edit_message_text(
+            "🎓 منصة ابن الجبور التعليمية\n\n"
+            "أهلاً وسهلاً بك 🌹\n"
+            "اختر من القائمة أدناه:",
+            reply_markup=main_menu()
+        )
+        return
+
     messages = {
         "sixth_primary": "📘 السادس الابتدائي\n\nسيتم إضافة المواد والملازم قريبًا.",
         "third_intermediate": "📗 الثالث المتوسط\n\nسيتم إضافة المواد والملازم قريبًا.",
@@ -96,15 +162,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "news": "📢 الإعلانات\n\nلا توجد إعلانات حاليًا.",
         "support": "☎️ الدعم الفني\n\nسيتم إضافة معلومات الدعم قريبًا.",
     }
-
-    if query.data == "main_menu":
-        await query.edit_message_text(
-            "🎓 منصة ابن الجبور التعليمية\n\n"
-            "أهلاً وسهلاً بك 🌹\n"
-            "اختر من القائمة أدناه:",
-            reply_markup=main_menu()
-        )
-        return
 
     await query.edit_message_text(
         messages.get(query.data, "اختر من القائمة الرئيسية.")
