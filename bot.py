@@ -1,6 +1,5 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-
 import os
 
 TOKEN = os.getenv("BOT_TOKEN")
@@ -21,7 +20,6 @@ CHANNELS = [
 # =========================================================
 
 def main_menu():
-
     keyboard = [
         [InlineKeyboardButton("📚 المراحل الدراسية", callback_data="stages")],
         [InlineKeyboardButton("👨‍🏫 المدرسون", callback_data="teachers")],
@@ -40,7 +38,6 @@ def main_menu():
 # =========================================================
 
 def subscription_menu():
-
     keyboard = [
         [
             InlineKeyboardButton(
@@ -95,6 +92,26 @@ async def is_subscribed(user_id, context):
 
 
 # =========================================================
+# رسالة الاشتراك
+# =========================================================
+
+async def send_subscription_message(query):
+
+    await query.edit_message_text(
+
+        "🎓 منصة ابن الجبور التعليمية\n\n"
+        "⚠️ عزيزي الطالب، يبدو أنك غير مشترك في إحدى قنوات المنصة.\n\n"
+        "📢 للاستمرار باستخدام البوت، يجب أن تكون مشتركًا في القناتين.\n\n"
+        "1️⃣ اشترك بالقناة التعليمية\n"
+        "2️⃣ اشترك بقناة القرآن الكريم\n\n"
+        "بعد الاشتراك اضغط على:\n"
+        "✅ تحقق من الاشتراك",
+
+        reply_markup=subscription_menu()
+    )
+
+
+# =========================================================
 # أمر START
 # =========================================================
 
@@ -115,10 +132,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🌹 أهلاً وسهلاً بك\n\n"
             "📢 للاستفادة من خدمات المنصة مجانًا، "
             "يرجى الاشتراك في القناتين أولاً.\n\n"
-
             "1️⃣ اشترك بالقناة التعليمية\n"
             "2️⃣ اشترك بقناة القرآن الكريم\n\n"
-
             "بعد الاشتراك اضغط على زر التحقق:",
 
             reply_markup=subscription_menu()
@@ -144,7 +159,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
 
-    await query.answer()
+    user_id = query.from_user.id
 
 
     # =====================================================
@@ -153,7 +168,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if query.data == "check_subscription":
 
-        user_id = query.from_user.id
+        await query.answer()
 
         subscribed = await is_subscribed(
             user_id,
@@ -174,12 +189,39 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
 
             await query.answer(
-
-                "❌ يجب الاشتراك في القناتين أولاً.",
+                "❌ لم يتم العثور على اشتراكك في القناتين.",
                 show_alert=True
             )
 
         return
+
+
+    # =====================================================
+    # فحص الاشتراك عند كل ضغطة زر
+    # =====================================================
+
+    subscribed = await is_subscribed(
+        user_id,
+        context
+    )
+
+    if not subscribed:
+
+        await query.answer(
+            "⚠️ يجب الاشتراك في القناتين أولاً.",
+            show_alert=True
+        )
+
+        await send_subscription_message(query)
+
+        return
+
+
+    # =====================================================
+    # بعد التأكد من الاشتراك
+    # =====================================================
+
+    await query.answer()
 
 
     # =====================================================
@@ -563,7 +605,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "support":
             "☎️ الدعم الفني\n\n"
             "سيتم إضافة معلومات الدعم قريبًا.",
-
     }
 
 
@@ -599,5 +640,4 @@ def main():
 
 
 if __name__ == "__main__":
-
     main()
